@@ -1,17 +1,31 @@
+import os
 import telebot
+from flask import Flask, request
 
-# BotFather'dan olgan tokeningizni shu yerga yozing
-TOKEN = 9143306859:AAGTe3PZbOQR8SX3DDkkVkwvoDC4x6ElknM
-
+# BotTokeningizni shu yerga yozing yoki Render Environment Variables'dan oling
+TOKEN =9143306859:AAGTe3PZbOQR8SX3DDkkVkwvoDC4x6ElknM
 bot = telebot.TeleBot(TOKEN)
 
-# Barcha turdagi matnli xabarlarni qabul qiluvchi funksiya
+app = Flask(__name__)
+
+# Barcha xabarlarga javob berish
 @bot.message_handler(func=lambda message: True)
 def reply_to_all(message):
-    # Foydalanuvchi nima yozishidan qat'i nazar quyidagi javobni qaytaradi
     bot.reply_to(message, "Salom abmen qilasizmi")
 
-# Botni ishga tushirish
+# Render uchun Flask marshruti (Port yopilib qolmasligi uchun)
+@app.route('/')
+def index():
+    return "Bot ishlayapti!", 200
+
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    json_string = request.get_data().decode('utf-8')
+    update = telebot.types.Update.de_json(json_string)
+    bot.process_new_updates([update])
+    return "!", 200
+
 if __name__ == '__main__':
-    print("Bot ishga tushdi...")
+    # Mahalliy test qilish uchun
+    bot.remove_webhook()
     bot.infinity_polling()
